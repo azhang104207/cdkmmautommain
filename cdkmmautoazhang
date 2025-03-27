@@ -183,7 +183,7 @@ spawn(function()
                 if not boss or boss.Name ~= "Dough King" then
                     return DoughKingHop()
                 end
-            elseif items.alucardCount >= 5 then
+            elseif items.alucardCount == 5 then -- Changed from >= to ==
                 if not boss or boss.Name ~= "Soul Reaper" then
                     return SoulReaperHop()
                 end
