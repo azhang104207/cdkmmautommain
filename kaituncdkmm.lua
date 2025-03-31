@@ -70,14 +70,23 @@ getgenv().SoulReaperHop = function()
     end
 end
 
+local cakeQueenDied = false
+local cakeQueenDeathTime = 0
+
 function CheckBossAttack()
     for _,Boss in pairs(game.Workspace.Enemies:GetChildren()) do
-        if Boss.Name == "rip_indra True Form" or Boss.Name == "Dough King" or Boss.Name == "Soul Reaper" and DetectingPart(Boss) and Boss.Humanoid.Health > 0 then
+        if Boss.Name == "rip_indra True Form" or Boss.Name == "Dough King" or Boss.Name == "Soul Reaper" or Boss.Name == "Cake Queen" and DetectingPart(Boss) and Boss.Humanoid.Health > 0 then
+            if Boss.Name == "Cake Queen" then
+                Boss.Humanoid.Died:Connect(function()
+                    cakeQueenDied = true
+                    cakeQueenDeathTime = os.time()
+                end)
+            end
             return Boss
         end
     end
     for _,Boss in pairs(game.ReplicatedStorage:GetChildren()) do
-        if Boss.Name == "rip_indra True Form" or Boss.Name == "Dough King" or Boss.Name == "Soul Reaper" then
+        if Boss.Name == "rip_indra True Form" or Boss.Name == "Dough King" or Boss.Name == "Soul Reaper" or Boss.Name == "Cake Queen" then
             return Boss
         end
     end
@@ -128,42 +137,99 @@ function CheckItems()
     return items, plr.Data.Level.Value
 end
 
+-- Create main menu GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ItemStatusGUI"
 screenGui.Parent = game:GetService("CoreGui")
 screenGui.ResetOnSpawn = false
 
-local function CreateStatusLabel(name, position)
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = name
-    textLabel.Size = UDim2.new(0, 450, 0, 60) -- Tăng kích thước gấp 3
-    textLabel.Position = position
-    textLabel.BackgroundTransparency = 0.5
-    textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 42 -- Tăng font size
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = screenGui
-    return textLabel
+-- Create main frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 400, 0, 250)  -- Back to original size
+mainFrame.Position = UDim2.new(1, -420, 0, 10)  -- Positioned at top right
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Add corner radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = mainFrame
+
+-- Create title bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleBar
+
+local titleText = Instance.new("TextLabel")
+titleText.Text = "Item Status"
+titleText.Size = UDim2.new(1, 0, 1, 0)
+titleText.BackgroundTransparency = 1
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.TextSize = 24  -- Increased text size
+titleText.Font = Enum.Font.GothamBold
+titleText.Parent = titleBar
+
+-- Create content frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, -20, 1, -40)
+contentFrame.Position = UDim2.new(0, 10, 0, 35)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+local itemLabels = {}
+local items = {"Valkyrie", "Mirror", "Tushita", "Alucard"}  -- Remove quest items
+local yOffset = 0
+
+for _, item in ipairs(items) do
+    local itemFrame = Instance.new("Frame")
+    itemFrame.Size = UDim2.new(1, 0, 0, 40)  -- Made taller
+    itemFrame.Position = UDim2.new(0, 0, 0, yOffset)
+    itemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    itemFrame.BorderSizePixel = 0
+    itemFrame.Parent = contentFrame
+    
+    local itemCorner = Instance.new("UICorner")
+    itemCorner.CornerRadius = UDim.new(0, 6)
+    itemCorner.Parent = itemFrame
+    
+    local itemLabel = Instance.new("TextLabel")
+    itemLabel.Name = item
+    itemLabel.Size = UDim2.new(1, -10, 1, 0)
+    itemLabel.Position = UDim2.new(0, 10, 0, 0)
+    itemLabel.BackgroundTransparency = 1
+    itemLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    itemLabel.TextSize = 20  -- Increased text size
+    itemLabel.Font = Enum.Font.Gotham
+    itemLabel.TextXAlignment = Enum.TextXAlignment.Left
+    itemLabel.Parent = itemFrame
+    
+    itemLabels[item:lower()] = itemLabel
+    yOffset = yOffset + 45  -- Increased spacing
 end
 
-local viewportSize = workspace.CurrentCamera.ViewportSize
-local centerX = (viewportSize.X / 2) - 225 -- Căn giữa theo chiều ngang
-local centerY = (viewportSize.Y / 2) - 90 -- Căn giữa theo chiều dọc
-
-local itemLabels = {
-    valk = CreateStatusLabel("Valkyrie", UDim2.new(0, centerX, 0, centerY)),
-    mirror = CreateStatusLabel("Mirror", UDim2.new(0, centerX, 0, centerY + 65)),
-    tushita = CreateStatusLabel("Tushita", UDim2.new(0, centerX, 0, centerY + 130)),
-    alucard = CreateStatusLabel("Alucard", UDim2.new(0, centerX, 0, centerY + 195))
-}
-
+-- Update the UpdateItemStatus function
 function UpdateItemStatus(items)
     pcall(function()
-        itemLabels.valk.Text = "Valkyrie: " .. (items.hasValkyrie and "✓" or "✗")
-        itemLabels.mirror.Text = "Mirror: " .. (items.hasMirror and "✓" or "✗")
+        itemLabels.valkyrie.Text = "Valkyrie Helm: " .. (items.hasValkyrie and "✓" or "✗")
+        itemLabels.mirror.Text = "Mirror Fractal: " .. (items.hasMirror and "✓" or "✗")
         itemLabels.tushita.Text = "Tushita: " .. (items.hasTushita and "✓" or "✗")
         itemLabels.alucard.Text = "Alucard Fragment: " .. items.alucardCount
+        
+        -- Update colors based on status
+        itemLabels.valkyrie.Parent.BackgroundColor3 = items.hasValkyrie and Color3.fromRGB(45, 85, 45) or Color3.fromRGB(40, 40, 40)
+        itemLabels.mirror.Parent.BackgroundColor3 = items.hasMirror and Color3.fromRGB(45, 85, 45) or Color3.fromRGB(40, 40, 40)
+        itemLabels.tushita.Parent.BackgroundColor3 = items.hasTushita and Color3.fromRGB(45, 85, 45) or Color3.fromRGB(40, 40, 40)
+        itemLabels.alucard.Parent.BackgroundColor3 = items.alucardCount >= 5 and Color3.fromRGB(45, 85, 45) or Color3.fromRGB(40, 40, 40)
     end)
 end
 
@@ -174,6 +240,21 @@ spawn(function()
             local boss = CheckBossAttack()
             
             UpdateItemStatus(items)
+            
+            -- Check if Cake Queen died recently (within 1 minute 30 seconds)
+            if cakeQueenDied and os.time() - cakeQueenDeathTime < 90 then
+                return
+            end
+            
+            -- Reset Cake Queen death status after 1 minute 30 seconds
+            if cakeQueenDied and os.time() - cakeQueenDeathTime >= 90 then
+                cakeQueenDied = false
+            end
+            
+            -- Check if Cake Queen is present
+            if boss and boss.Name == "Cake Queen" then
+                return
+            end
             
             if not items.hasValkyrie or (playerLevel >= 2000 and not items.hasTushita) then
                 if not boss or boss.Name ~= "rip_indra True Form" then
