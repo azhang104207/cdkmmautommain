@@ -7,7 +7,6 @@ end
 -- Cache services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 
 -- Generic server hop function to reduce code duplication
 local function ServerHop(port)
@@ -22,7 +21,7 @@ local function ServerHop(port)
         
         for _, server in ipairs(foundServers) do
             if server.jobId ~= game.JobId then
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.jobId, game.Players.LocalPlayer)
+                ReplicatedStorage.__ServerBrowser:InvokeServer("teleport", server.jobId)
                 break
             end
         end
